@@ -22,12 +22,11 @@ RUN dotnet publish src/StarConcessionaria.Api/StarConcessionaria.Api.csproj -c R
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS runtime
 WORKDIR /app
 
-# Adiciona usuario nao-root para seguranca de producao
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
+# Render define a variavel de ambiente PORT automaticamente (padrao 10000).
+# O ASP.NET Core 8+ le a variavel de ambiente PORT ou ASPNETCORE_HTTP_PORTS.
+ENV ASPNETCORE_HTTP_PORTS=8080
+EXPOSE 8080
 
 COPY --from=build /app/publish ./
-ENV ASPNETCORE_URLS=http://+:8080
-EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "StarConcessionaria.Api.dll"]
