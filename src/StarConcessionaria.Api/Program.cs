@@ -14,12 +14,11 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    await app.Services.SeedAdminAsync(app.Configuration);
-}
+// Mapeia OpenAPI tambem em producao/staging para permitir inspecao e testes no Render
+app.MapOpenApi();
+
+// Semeia o administrador padrao tanto em Development quanto caso solicitado via variavel
+await app.Services.SeedAdminAsync(app.Configuration);
 
 app.UseHttpsRedirection();
 
