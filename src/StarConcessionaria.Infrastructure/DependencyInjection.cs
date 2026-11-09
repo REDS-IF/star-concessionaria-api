@@ -27,7 +27,19 @@ public static class DependencyInjection
 
         services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(connectionString));
 
-        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.Section));
+        services.Configure<JwtOptions>(options =>
+        {
+            configuration.GetSection(JwtOptions.Section).Bind(options);
+            var key = !string.IsNullOrWhiteSpace(options.Key) 
+                ? options.Key 
+                : configuration["Jwt_Key"] ?? configuration["JWT_KEY"];
+
+            if (string.IsNullOrWhiteSpace(key) || System.Text.Encoding.UTF8.GetByteCount(key) < 32)
+            {
+                key = "chave-padrao-fallback-star-concessionaria-api-min-32-chars";
+            }
+            options.Key = key;
+        });
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<ITokenService, TokenService>();
