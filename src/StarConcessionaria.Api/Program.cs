@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using StarConcessionaria.Api.Extensions;
 using StarConcessionaria.Application;
@@ -32,8 +34,39 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Configura o OpenAPI com suporte nativo a Bearer JWT no Swagger/Scalar
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, ct) =>
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes.Add(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Informe o token JWT retornado pelo endpoint /api/v1/auth/login",
+            In = ParameterLocation.Header
+        });
+
+        document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = JwtBearerDefaults.AuthenticationScheme
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+
+        return Task.CompletedTask;
+    });
+});
 
 var app = builder.Build();
 
