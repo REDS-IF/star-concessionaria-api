@@ -65,7 +65,8 @@ public static class DependencyInjection
         }
 
         var host = ObterValor("Bd_Host", "BD_HOST", "bd_host");
-        var password = ObterValor("Bd_Password", "Bd_password", "BD_PASSWORD", "bd_password");
+        // Prioriza expressamente 'Bd_password' com p minúsculo conforme configurado no Render
+        var password = ObterValor("Bd_password", "Bd_Password", "bd_password", "BD_PASSWORD");
 
         // Se tiver host E password fornecidos, monta a string
         if (!string.IsNullOrWhiteSpace(host) && !string.IsNullOrWhiteSpace(password))
