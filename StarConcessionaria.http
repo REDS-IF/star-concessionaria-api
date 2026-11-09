@@ -1,6 +1,0 @@
-@StarConcessionaria_HostAddress = http://localhost:5042
-
-GET {{StarConcessionaria_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
