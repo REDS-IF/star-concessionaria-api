@@ -1,3 +1,4 @@
+using Scalar.AspNetCore;
 using StarConcessionaria.Api.Extensions;
 using StarConcessionaria.Application;
 using StarConcessionaria.Infrastructure;
@@ -14,8 +15,12 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Mapeia OpenAPI tambem em producao/staging para permitir inspecao e testes no Render
+// Mapeia OpenAPI e Scalar UI
 app.MapOpenApi();
+app.MapScalarApiReference();
+
+// Redireciona a raiz "/" para a interface interativa do Scalar
+app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 
 // Semeia o administrador padrao tanto em Development quanto caso solicitado via variavel
 await app.Services.SeedAdminAsync(app.Configuration);
