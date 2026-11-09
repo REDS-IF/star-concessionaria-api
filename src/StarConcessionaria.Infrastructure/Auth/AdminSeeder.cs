@@ -13,16 +13,24 @@ public static class AdminSeeder
     /// <summary>Cria o administrador inicial a partir de Seed:Admin:* se ainda nao houver nenhum.</summary>
     public static async Task SeedAdminAsync(this IServiceProvider services, IConfiguration configuration)
     {
+        // Lê exclusivamente das variáveis de ambiente configuradas no servidor, sem qualquer valor hardcoded.
         var email = configuration["Seed:Admin:Email"] 
                     ?? configuration["Seed__Admin__Email"] 
-                    ?? configuration["SEED_ADMIN_EMAIL"] 
-                    ?? "admin@star.com";
+                    ?? configuration["SEED_ADMIN_EMAIL"];
 
         var senha = configuration["Seed:Admin:Senha"] 
                     ?? configuration["Seed__Admin__Senha"] 
-                    ?? configuration["SEED_ADMIN_SENHA"] 
-                    ?? "Admin@123456";
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(senha)) return;
+                    ?? configuration["SEED_ADMIN_SENHA"];
+
+        var nome = configuration["Seed:Admin:Nome"] 
+                   ?? configuration["Seed__Admin__Nome"] 
+                   ?? configuration["SEED_ADMIN_NOME"] 
+                   ?? "Administrador";
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(senha))
+        {
+            return;
+        }
 
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -34,7 +42,7 @@ public static class AdminSeeder
 
         db.Usuarios.Add(new UsuarioSistema
         {
-            Nome = configuration["Seed:Admin:Nome"] ?? "Administrador",
+            Nome = nome.Trim(),
             Email = email,
             SenhaHash = hasher.Hash(senha),
             Perfil = "administrador"
