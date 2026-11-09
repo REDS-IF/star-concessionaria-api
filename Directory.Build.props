@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- TODO: migrar para net10.0 quando o SDK .NET 10 estiver instalado (decisao oficial do projeto) -->
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>
