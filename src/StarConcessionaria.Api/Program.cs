@@ -4,6 +4,7 @@ using StarConcessionaria.Api.Extensions;
 using StarConcessionaria.Application;
 using StarConcessionaria.Infrastructure;
 using StarConcessionaria.Infrastructure.Auth;
+using StarConcessionaria.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,8 +48,12 @@ app.MapScalarApiReference();
 // Redireciona a raiz "/" para a interface interativa do Scalar
 app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 
-// Semeia o administrador padrao tanto em Development quanto caso solicitado via variavel
+// Semeia o administrador inicial a partir das variaveis de ambiente
 await app.Services.SeedAdminAsync(app.Configuration);
+
+// Executa o seed inicial de dados do catalogo (Lojas, Veiculos, Pecas, Clientes, Contatos)
+// Possui checagem idempotente interna: se ja existirem registros, nao executa novamente.
+await app.Services.SeedAsync();
 
 app.UseHttpsRedirection();
 
