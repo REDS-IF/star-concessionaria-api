@@ -9,12 +9,12 @@ services:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: ConnectionStrings__DefaultConnection
-        value: Host=ep-quiet-wave-befccz8w-pooler.c-9.us-east-2.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_qm6aysxHCc2I;SSL Mode=VerifyFull;Channel Binding=Require;
+        sync: false
       - key: Jwt__Key
         generateValue: true
       - key: Seed__Admin__Email
-        value: admin@star.com
+        sync: false
       - key: Seed__Admin__Senha
-        value: Admin@123456
+        sync: false
       - key: Seed__Admin__Nome
         value: Administrador
