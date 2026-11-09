@@ -47,22 +47,44 @@ public static class DependencyInjection
 
     private static string ObterConnectionString(IConfiguration configuration)
     {
-        // 1. Prioriza montar via variaveis individuais configuradas no Render (Bd_Host, Bd_Username, etc.)
-        var host = configuration["Bd_Host"];
-        if (!string.IsNullOrWhiteSpace(host))
+        // 1. Verifica se foi passada uma ConnectionString completa pronta (via env ou config)
+        var defaultConn = configuration.GetConnectionString("DefaultConnection") 
+                          ?? configuration["ConnectionStrings__DefaultConnection"] 
+                          ?? configuration["DATABASE_URL"];
+
+        // 2. Tenta capturar variaveis individuais (Bd_Host, etc.) com busca case-insensitive e limpeza de espacos/aspas
+        string? ObterValor(params string[] chaves)
         {
-            var database = configuration["Bd_Database"] ?? configuration["Bd_database"] ?? "neondb";
-            var username = configuration["Bd_Username"] ?? configuration["Bd_username"];
-            var password = configuration["Bd_Password"] ?? configuration["Bd_password"];
-            var sslMode = configuration["Bd_SSL_Mode"] ?? configuration["Bd_Ssl_Mode"] ?? configuration["Bd_ssl_mode"] ?? "VerifyFull";
-            var channelBinding = configuration["Bd_Channel_Binding"] ?? configuration["Bd_channel_binding"] ?? "Require";
+            foreach (var chave in chaves)
+            {
+                var val = configuration[chave];
+                if (!string.IsNullOrWhiteSpace(val))
+                    return val.Trim().Trim('"', '\'');
+            }
+            return null;
+        }
+
+        var host = ObterValor("Bd_Host", "BD_HOST", "bd_host");
+        var password = ObterValor("Bd_Password", "Bd_password", "BD_PASSWORD", "bd_password");
+
+        // Se tiver host E password fornecidos, monta a string
+        if (!string.IsNullOrWhiteSpace(host) && !string.IsNullOrWhiteSpace(password))
+        {
+            var database = ObterValor("Bd_Database", "Bd_database", "BD_DATABASE", "bd_database") ?? "neondb";
+            var username = ObterValor("Bd_Username", "Bd_username", "BD_USERNAME", "bd_username") ?? "neondb_owner";
+            var sslMode = ObterValor("Bd_SSL_Mode", "Bd_Ssl_Mode", "Bd_ssl_mode", "BD_SSL_MODE") ?? "VerifyFull";
+            var channelBinding = ObterValor("Bd_Channel_Binding", "Bd_channel_binding", "BD_CHANNEL_BINDING") ?? "Require";
 
             return $"Host={host};Database={database};Username={username};Password={password};SSL Mode={sslMode};Channel Binding={channelBinding};";
         }
 
-        // 2. Se nao encontrar as variaveis separadas, utiliza o padrao ConnectionStrings:DefaultConnection
-        return configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Nenhuma ConnectionString configurada (verifique as variaveis Bd_Host/Bd_Username/Bd_Password ou ConnectionStrings:DefaultConnection).");
+        // 3. Fallback para DefaultConnection caso Bd_* nao esteja completo
+        if (!string.IsNullOrWhiteSpace(defaultConn))
+        {
+            return defaultConn.Trim().Trim('"', '\'');
+        }
+
+        throw new InvalidOperationException("Nenhuma ConnectionString valida configurada. Certifique-se de configurar Bd_Password e Bd_Host, ou ConnectionStrings__DefaultConnection.");
     }
 
 }
