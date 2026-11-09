@@ -1,0 +1,26 @@
+# Para que serve cada tabela
+- Loja guarda as unidades da concessionária e seus endereços. As coordenadas ajudam a localizar lojas próximas.
+- UsuarioSistema guarda funcionários e seus perfis, como comercial, logística ou administrador. senha_usu deve armazenar o hash da senha, não a senha em texto puro.
+- Cliente guarda os dados de contato dos clientes.
+- FormaPagamento guarda as formas aceitas para vendas de veículos. A tabela é criada vazia; as opções à vista, consórcio e financiamento precisam ser cadastradas depois.
+- Veiculo guarda os dados do estoque e a loja onde cada veículo está localizado.
+- FotoVeiculo guarda o endereço de cada foto e o veículo ao qual ela pertence.
+- AlteracaoVeiculo registra alterações realizadas em um veículo.
+- Contato registra pedidos de informação, propostas, início de compra e encaminhamento ao vendedor. Pode ser ligado a um cliente, veículo, loja e funcionário.
+- Reserva registra o cliente, o veículo, a data do pedido e a situação da reserva.
+- Agendamento registra visitas e test-drives, com cliente, loja, horário e, quando necessário, veículo.
+- VendaVeiculo registra uma venda concluída e relaciona veículo, cliente, vendedor, loja e forma de pagamento.
+- Peca guarda o catálogo de peças e o estoque atual.
+- VendaPeca registra as peças vendidas, a quantidade, o valor unitário e, se identificado, o cliente.
+- DuvidaFrequente guarda perguntas e respostas exibidas aos clientes.
+
+# Como as tabelas se relacionam
+
+- Uma loja pode ter vários veículos, agendamentos, contatos e vendas.
+  Um veículo pode ter várias fotos, alterações, contatos, reservas e agendamentos.
+  Um cliente pode fazer vários contatos, reservas e agendamentos, além de comprar veículos ou peças.
+  Usuários do sistema podem atender contatos e registrar vendas de veículos.
+  Uma forma de pagamento pode ser usada em várias vendas, e uma peça pode aparecer em vários registros de venda.
+
+- A tabela DuvidaFrequente não precisa se relacionar com as demais.
+  As regras de disponibilidade de veículos, conflito de horários e atualização do estoque precisam ser verificadas pela aplicação.
