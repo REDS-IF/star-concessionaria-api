@@ -17,8 +17,9 @@
   - `docs/database/explicação.txt` (dicionário de dados e regras relacionais oficiais).
   - `docs/database/diagrama_star.pdf` (diagrama EER original).
 - **Última Ação Realizada:** Incorporação do schema oficial do banco de dados (14 tabelas), criação do script PostgreSQL correspondente e atualização das seções 5 e 6 do plano.
+- **Última Ação (T3):** TASK-01 concluída: solução com 4 projetos + 2 de testes, `Directory.Build.props` (TargetFramework central) e `docker-compose.yml`. **Atenção:** o SDK .NET 10 não está instalado (só 8 e 9), então por autorização do usuário o target está temporariamente em `net9.0` em `Directory.Build.props`; migrar para `net10.0` quando o SDK existir.
 - **Próximo Passo Imediato (Para o Próximo Agente):**
-  - Iniciar a **Fase 1 / TASK-01**: Estruturar a solução em 4 projetos (`StarConcessionaria.Api`, `StarConcessionaria.Application`, `StarConcessionaria.Domain`, `StarConcessionaria.Infrastructure`) e criar os projetos de teste (`StarConcessionaria.UnitTests`, `StarConcessionaria.IntegrationTests`), configurando `docker-compose.yml` com PostgreSQL inicializando com `docs/database/star_postgres.sql`.
+  - Validar `docker compose up -d postgres` (não testado) e iniciar a **TASK-02**: `ApplicationDbContext`, Fluent API e migrations (adicionar pacotes EF Core/Npgsql).
 
 ---
 
@@ -108,6 +109,7 @@ dotnet ef database update --project src/StarConcessionaria.Infrastructure --star
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **2026-10-15 (T1)** | Arquiteta de Software / Tech Lead | Limpeza de arquivos parciais de `src/`; elaboração do documento completo `PLANO_IMPLEMENTACAO.md` (15 seções, ER Mermaid, endpoints, backlog); criação do guia de handoff `AGENT_CONTEXT.md`. | `PLANO_IMPLEMENTACAO.md`, `AGENT_CONTEXT.md` | `dotnet build` validado sem erros; verificação de 100% de cobertura dos 30 RFs, 8 RNs, 10 RNFs e 8 RVs. | Iniciar a **Fase 1 / TASK-01**: Criar a solução .NET com a estrutura modular de projetos (`Api`, `Application`, `Domain`, `Infrastructure`), testes e `docker-compose.yml` para PostgreSQL. |
 | **2026-10-15 (T2)** | Arquiteta de Software / Tech Lead | Incorporação dos artefatos oficiais do banco em `docs/database/` (`star.sql`, `star_postgres.sql`, `explicação.txt`, `diagrama_star.pdf`); atualização das Seções 5 e 6 do `PLANO_IMPLEMENTACAO.md` para refletir as 14 tabelas oficiais e nomes exatos de colunas; atualização do `AGENT_CONTEXT.md`. | `docs/database/*`, `PLANO_IMPLEMENTACAO.md`, `AGENT_CONTEXT.md` | `dotnet build` validado com sucesso (0 erros, 0 warnings); conferência das 14 tabelas oficiais. | Iniciar a **Fase 1 / TASK-01**: Criar a solução .NET estruturada em 4 projetos com base no schema oficial de `docs/database/star_postgres.sql`. |
+| **2026-11-09 (T3)** | Desenvolvedor / TASK-01 | Criada solução .NET com Api (controllers), Application, Domain, Infrastructure, UnitTests e IntegrationTests, referências entre camadas e docker-compose com PostgreSQL 16 (init com `star_postgres.sql`). Target `net9.0` temporário (SDK 10 ausente). | `StarConcessionaria.sln`, `Directory.Build.props`, `docker-compose.yml`, `src/*`, `tests/*` | `dotnet build` OK (0 erros, 0 avisos); docker compose não executado. | TASK-02: DbContext, configurations e migrations; testar o container; migrar para net10.0 quando possível. |
 
 ---
 
