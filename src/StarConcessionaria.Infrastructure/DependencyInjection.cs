@@ -23,8 +23,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection nao configurada.");
+        var connectionString = ObterConnectionString(configuration);
 
         services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(connectionString));
 
@@ -45,4 +44,25 @@ public static class DependencyInjection
         services.AddHostedService<ReservaExpiracaoWorker>();
         return services;
     }
+
+    private static string ObterConnectionString(IConfiguration configuration)
+    {
+        // 1. Prioriza montar via variaveis individuais configuradas no Render (Bd_Host, Bd_Username, etc.)
+        var host = configuration["Bd_Host"];
+        if (!string.IsNullOrWhiteSpace(host))
+        {
+            var database = configuration["Bd_Database"] ?? configuration["Bd_database"] ?? "neondb";
+            var username = configuration["Bd_Username"] ?? configuration["Bd_username"];
+            var password = configuration["Bd_Password"] ?? configuration["Bd_password"];
+            var sslMode = configuration["Bd_SSL_Mode"] ?? configuration["Bd_Ssl_Mode"] ?? configuration["Bd_ssl_mode"] ?? "VerifyFull";
+            var channelBinding = configuration["Bd_Channel_Binding"] ?? configuration["Bd_channel_binding"] ?? "Require";
+
+            return $"Host={host};Database={database};Username={username};Password={password};SSL Mode={sslMode};Channel Binding={channelBinding};";
+        }
+
+        // 2. Se nao encontrar as variaveis separadas, utiliza o padrao ConnectionStrings:DefaultConnection
+        return configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Nenhuma ConnectionString configurada (verifique as variaveis Bd_Host/Bd_Username/Bd_Password ou ConnectionStrings:DefaultConnection).");
+    }
+
 }
