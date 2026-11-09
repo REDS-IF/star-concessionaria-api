@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StarConcessionaria.Api/StarConcessionaria.Api.csproj" />
+    <Project Path="src/StarConcessionaria.Application/StarConcessionaria.Application.csproj" />
+    <Project Path="src/StarConcessionaria.Domain/StarConcessionaria.Domain.csproj" />
+    <Project Path="src/StarConcessionaria.Infrastructure/StarConcessionaria.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/StarConcessionaria.UnitTests/StarConcessionaria.UnitTests.csproj" />
+  </Folder>
+</Solution>

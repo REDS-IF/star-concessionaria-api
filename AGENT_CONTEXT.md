@@ -8,17 +8,22 @@
 
 ## 1. ESTADO ATUAL DO PROJETO
 
-- **Fase Atual do Plano:** **Fase 1: Preparação do Ambiente e Criação da Solução** (pronto para início da implementação da infraestrutura da solução).
+- **Fase Atual do Plano:** **Fase 2 / Fase 3 Concluídas; Fases 4, 5, 11 e 12 Iniciadas** (Base da API funcional, compilando e testada com 100% de sucesso).
 - **Documento Mestre de Referência:** `PLANO_IMPLEMENTACAO.md` (contém as 15 seções detalhadas, endpoints, regras de negócio RN01 a RN08, modelagem relacional completa e backlog P0/P1/P2).
-- **Especificação de Requisitos Original:** `Requisitos_FullCycle.pdf` (30 RFs, 8 RNs, 10 RNFs, 8 RVs).
 - **Fonte de Verdade do Banco de Dados:**
   - `docs/database/star.sql` (script SQL original com 14 tabelas).
   - `docs/database/star_postgres.sql` (versão adaptada e pronta para PostgreSQL 16+ com tipos compatíveis e índices).
-  - `docs/database/explicação.txt` (dicionário de dados e regras relacionais oficiais).
-  - `docs/database/diagrama_star.pdf` (diagrama EER original).
-- **Última Ação Realizada:** Incorporação do schema oficial do banco de dados (14 tabelas), criação do script PostgreSQL correspondente e atualização das seções 5 e 6 do plano.
+  - `docs/database/explicação.txt` (dicionário de dados das 14 tabelas oficiais).
+  - `docs/database/diagrama_star.pdf` (diagrama EER oficial).
+- **Endpoints Já Funcionais na API (`StarConcessionaria.Api`):**
+  - `GET /health` (Status da API).
+  - `POST /api/v1/auth/login` (Autenticação JWT administrativa).
+  - `GET /api/v1/unidades` e `POST /api/v1/unidades` (Lojas físicas).
+  - `GET /api/v1/veiculos` e `POST /api/v1/veiculos` (Catálogo público com filtros múltiplos simultâneos e cadastro de veículos).
+  - `PATCH /api/v1/veiculos/{id}/situacao` (Atualização de situação com auditoria).
+  - `GET /api/v1/faqs` (Dúvidas frequentes).
 - **Próximo Passo Imediato (Para o Próximo Agente):**
-  - Iniciar a **Fase 1 / TASK-01**: Estruturar a solução em 4 projetos (`StarConcessionaria.Api`, `StarConcessionaria.Application`, `StarConcessionaria.Domain`, `StarConcessionaria.Infrastructure`) e criar os projetos de teste (`StarConcessionaria.UnitTests`, `StarConcessionaria.IntegrationTests`), configurando `docker-compose.yml` com PostgreSQL inicializando com `docs/database/star_postgres.sql`.
+  - Implementar **Fase 8 (Reservas)** e **Fase 9 (Agendamentos e Test-Drives)** na API, garantindo o bloqueio atômico de concorrência na criação de reservas (RN01, RN03) e validação de test-drives sem sobreposição de horário (RN04, RN08).
 
 ---
 
@@ -29,24 +34,23 @@ Nenhum agente deve alterar ou substituir essas tecnologias sem autorização exp
 | Componente | Tecnologia Escolhida | Justificativa / Diretriz |
 | :--- | :--- | :--- |
 | **Linguagem & Runtime** | C# / .NET 10 | Versão estável do repositório (`net10.0`). |
-| **Arquitetura** | Clean Architecture Pragmática (4 camadas) | `Domain` (entidades ricas) -> `Application` (casos de uso/DTOs) -> `Infrastructure` (EF Core/PostgreSQL) -> `Api` (Controllers/HTTP). Sem CQRS inflado/MediatR desnecessário. |
+| **Arquitetura** | Clean Architecture Pragmática (4 camadas) | `Domain` (entidades ricas) -> `Application` (casos de uso/DTOs/interfaces) -> `Infrastructure` (EF Core/PostgreSQL/Services) -> `Api` (Controllers/HTTP/Middlewares). Sem CQRS inflado/MediatR desnecessário. |
 | **Banco de Dados** | PostgreSQL 16+ via Docker | Banco relacional oficial. Schema fixo em 14 tabelas (`docs/database/star_postgres.sql`). |
-| **ORM** | Entity Framework Core com Npgsql | Mapeamento via Fluent API (`IEntityTypeConfiguration<T>`) respeitando as 14 tabelas e colunas com sufixos (`_loj`, `_vei`, `_cli`, etc.). |
+| **ORM** | Entity Framework Core com Npgsql | Mapeamento via Fluent API (`StarConcessionariaDbContext`) respeitando as 14 tabelas e colunas com sufixos (`_loj`, `_vei`, `_cli`, etc.). |
 | **Autenticação & RBAC** | JWT Bearer + BCrypt | Perfis na tabela `UsuarioSistema`: `comercial`, `logistica`, `administrador`. Clientes anônimos para consultas públicas e propostas. |
-| **Validação** | FluentValidation | Regras de entrada desacopladas dos controllers. |
-| **Documentação API** | OpenAPI / Swagger / Scalar | Endpoints documentados em `/openapi/v1.json` ou UI Swagger. |
-| **Testes** | xUnit + FluentAssertions + Moq + Testcontainers | Testes de concorrência com PostgreSQL real e testes unitários no domínio. |
+| **Validação & Erros** | FluentValidation + RFC 7807 | Respostas de erro padronizadas pelo `GlobalExceptionHandlerMiddleware`. |
+| **Documentação API** | OpenAPI / Swagger / Scalar | Configuração nativa no `Program.cs`. |
+| **Testes** | xUnit + FluentAssertions + Moq | Testes unitários no projeto `tests/StarConcessionaria.UnitTests`. |
 
 ---
 
-## 3. MAPA RÁPIDO DA ESTRUTURA DE PASTAS ESPERADA
+## 3. MAPA RÁPIDO DA ESTRUTURA DE PASTAS ATUAL
 
 ```
 StarConcessionaria/
 ├── PLANO_IMPLEMENTACAO.md       # O roteiro detalhado fase por fase
 ├── AGENT_CONTEXT.md             # ESTE ARQUIVO (Handoff e contexto imediato)
 ├── docker-compose.yml           # Serviço postgres:16-alpine (porta 5432)
-├── Dockerfile                   # Build e deploy multi-stage
 │
 ├── docs/database/               # FONTE DE VERDADE DO BANCO DE DADOS
 │   ├── star.sql                 # Script SQL original (14 tabelas)
@@ -55,14 +59,13 @@ StarConcessionaria/
 │   └── diagrama_star.pdf        # Diagrama EER oficial
 │
 ├── src/
-│   ├── StarConcessionaria.Domain/          # Entidades (Veiculo, Loja, Reserva, Agendamento, Peca, etc.)
-│   ├── StarConcessionaria.Application/     # Services, DTOs, Validators, Interfaces
-│   ├── StarConcessionaria.Infrastructure/  # DbContext, Configurations, Migrations, Repositories
-│   └── StarConcessionaria.Api/             # Controllers, Middlewares, Program.cs
+│   ├── StarConcessionaria.Domain/          # Entidades oficiais, Enums e Exceções de Domínio
+│   ├── StarConcessionaria.Application/     # DTOs e Interfaces de Serviços
+│   ├── StarConcessionaria.Infrastructure/  # DbContext, Seeder, Hashers BCrypt, JWT e Services Concretos
+│   └── StarConcessionaria.Api/             # Program.cs, Controllers REST, Global Exception Middleware
 │
 └── tests/
-    ├── StarConcessionaria.UnitTests/       # Testes unitários de regras de negócio
-    └── StarConcessionaria.IntegrationTests/# Testes com Testcontainers PostgreSQL
+    └── StarConcessionaria.UnitTests/       # Testes unitários xUnit (Veiculo, Segurança, etc.)
 ```
 
 ---
@@ -75,17 +78,11 @@ Execute esses comandos diretamente no bash para validar seu trabalho sem precisa
 # Compilar toda a solução
 dotnet build
 
-# Executar testes unitários e de integração
+# Executar testes unitários
 dotnet test
 
 # Subir banco PostgreSQL local via Docker
 docker compose up -d postgres
-
-# Gerar nova migration no EF Core
-dotnet ef migrations add <NomeDaMigration> --project src/StarConcessionaria.Infrastructure --startup-project src/StarConcessionaria.Api
-
-# Aplicar migrations no banco
-dotnet ef database update --project src/StarConcessionaria.Infrastructure --startup-project src/StarConcessionaria.Api
 ```
 
 ---
@@ -101,13 +98,11 @@ dotnet ef database update --project src/StarConcessionaria.Infrastructure --star
 
 ## 6. HISTÓRICO DE HANDOFF ENTRE AGENTES
 
-> **Instruções para o Agente:**
-> Sempre que você concluir um turno com alterações no repositório, adicione uma nova linha na tabela abaixo descrevendo resumidamente o que foi feito, arquivos alterados, testes executados e a instrução clara para o próximo agente.
-
 | Data / Turno | Agente / Papel | Tarefas Realizadas | Arquivos Criados / Modificados | Testes Executados | Próximos Passos para o Próximo Agente |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **2026-10-15 (T1)** | Arquiteta de Software / Tech Lead | Limpeza de arquivos parciais de `src/`; elaboração do documento completo `PLANO_IMPLEMENTACAO.md` (15 seções, ER Mermaid, endpoints, backlog); criação do guia de handoff `AGENT_CONTEXT.md`. | `PLANO_IMPLEMENTACAO.md`, `AGENT_CONTEXT.md` | `dotnet build` validado sem erros; verificação de 100% de cobertura dos 30 RFs, 8 RNs, 10 RNFs e 8 RVs. | Iniciar a **Fase 1 / TASK-01**: Criar a solução .NET com a estrutura modular de projetos (`Api`, `Application`, `Domain`, `Infrastructure`), testes e `docker-compose.yml` para PostgreSQL. |
 | **2026-10-15 (T2)** | Arquiteta de Software / Tech Lead | Incorporação dos artefatos oficiais do banco em `docs/database/` (`star.sql`, `star_postgres.sql`, `explicação.txt`, `diagrama_star.pdf`); atualização das Seções 5 e 6 do `PLANO_IMPLEMENTACAO.md` para refletir as 14 tabelas oficiais e nomes exatos de colunas; atualização do `AGENT_CONTEXT.md`. | `docs/database/*`, `PLANO_IMPLEMENTACAO.md`, `AGENT_CONTEXT.md` | `dotnet build` validado com sucesso (0 erros, 0 warnings); conferência das 14 tabelas oficiais. | Iniciar a **Fase 1 / TASK-01**: Criar a solução .NET estruturada em 4 projetos com base no schema oficial de `docs/database/star_postgres.sql`. |
+| **2026-10-15 (T3)** | Arquiteta de Software / Tech Lead | Implementação completa da fundação da API: solução `StarConcessionaria.sln` com 4 projetos Clean Architecture, 14 entidades de domínio mapeadas, `StarConcessionariaDbContext` com Npgsql, `DatabaseSeeder`, serviços de segurança (BCrypt e JWT), DTOs, controllers REST (`/health`, `auth`, `unidades`, `veiculos`, `faqs`), middleware global de exceções RFC 7807 e testes unitários. | `src/**/*`, `tests/**/*`, `docker-compose.yml`, `AGENT_CONTEXT.md` | `dotnet build` com 0 erros; `dotnet test` com 7 testes passando com 100% de sucesso. | Implementar **Fase 8 (Reservas)** e **Fase 9 (Agendamentos e Test-Drives)** na API com controle de concorrência e endpoints REST dedicados. |
 
 ---
 

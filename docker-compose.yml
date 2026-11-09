@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: star_concessionaria_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bd_star_concessionaria
+      POSTGRES_USER: star_admin
+      POSTGRES_PASSWORD: star_password_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docs/database/star_postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  postgres_data:
