@@ -13,8 +13,15 @@ public static class AdminSeeder
     /// <summary>Cria o administrador inicial a partir de Seed:Admin:* se ainda nao houver nenhum.</summary>
     public static async Task SeedAdminAsync(this IServiceProvider services, IConfiguration configuration)
     {
-        var email = configuration["Seed:Admin:Email"];
-        var senha = configuration["Seed:Admin:Senha"];
+        var email = configuration["Seed:Admin:Email"] 
+                    ?? configuration["Seed__Admin__Email"] 
+                    ?? configuration["SEED_ADMIN_EMAIL"] 
+                    ?? "admin@star.com";
+
+        var senha = configuration["Seed:Admin:Senha"] 
+                    ?? configuration["Seed__Admin__Senha"] 
+                    ?? configuration["SEED_ADMIN_SENHA"] 
+                    ?? "Admin@123456";
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(senha)) return;
 
         using var scope = services.CreateScope();
