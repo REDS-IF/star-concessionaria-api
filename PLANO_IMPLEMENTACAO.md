@@ -313,395 +313,309 @@ StarConcessionaria/
 
 ---
 
-## 5. MODELAGEM DO BANCO DE DADOS
+## 5. MODELAGEM DO BANCO DE DADOS (SCHEMA OFICIAL STAR CONCESSIONÁRIA)
 
-A modelagem de dados foi desenhada para garantir a **integridade referencial estrita**, suporte nativo a concorrência e rastreabilidade total das operações comerciais e operacionais.
+A modelagem de dados foi rigorosamente alinhada ao schema oficial fornecido pela Star Concessionária (disponível em `docs/database/star.sql`, `docs/database/star_postgres.sql` e documentado em `docs/database/explicação.txt`). O schema é composto por **14 tabelas**, com chaves estrangeiras explícitas, campos geográficos para localização e controle de integridade relacional.
 
-### 5.1 Entidades do Sistema
+### 5.1 Especificação Detalhada das 14 Tabelas Oficiais
 
-#### 1. `Unidades` (Lojas Físicas)
-- **Responsabilidade:** Representa cada uma das concessionárias/lojas físicas da rede onde os veículos estão alocados e onde ocorrem visitas e entregas.
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador único da loja.
-  - `Nome` (VARCHAR(150), NOT NULL): Nome comercial da unidade (ex: "Star Concessionária - Matriz Campinas").
-  - `Cnpj` (VARCHAR(18), NOT NULL, UNIQUE): CNPJ da unidade física.
-  - `Telefone` (VARCHAR(20), NOT NULL): Telefone de contato principal.
-  - `Email` (VARCHAR(150), NOT NULL): E-mail da unidade.
-  - `Logradouro` (VARCHAR(200), NOT NULL): Endereço (rua/avenida).
-  - `Numero` (VARCHAR(20), NOT NULL): Número predial.
-  - `Complemento` (VARCHAR(100), NULL): Informações complementares.
-  - `Bairro` (VARCHAR(100), NOT NULL): Bairro.
-  - `Cidade` (VARCHAR(100), NOT NULL): Cidade.
-  - `Estado` (VARCHAR(2), NOT NULL): UF (ex: "SP").
-  - `Cep` (VARCHAR(10), NOT NULL): Código postal.
-  - `HorarioFuncionamento` (VARCHAR(150), NOT NULL): Descrição do horário (ex: "Segunda a Sexta: 08:00 às 18:00; Sábado: 08:00 às 13:00").
-  - `Ativo` (BOOLEAN, NOT NULL, DEFAULT true): Flag de ativação.
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data do cadastro.
+#### 1. `Loja` (Unidades Físicas)
+- **Responsabilidade:** Guarda as concessionárias/unidades físicas da rede e seus endereços completos. As coordenadas de latitude e longitude auxiliam os clientes na identificação das lojas mais próximas (RF19, RF20).
+- **Colunas:**
+  - `id_loj` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador único da loja física.
+  - `nome_loj` (VARCHAR(300), NOT NULL): Nome comercial da unidade (ex: "Star Concessionária - Matriz Campinas").
+  - `telefone_loj` (VARCHAR(30)): Telefone de contato da loja.
+  - `cep_loj` (VARCHAR(15)): Código postal.
+  - `endereco_loj` (VARCHAR(300)): Logradouro (rua, avenida).
+  - `numero_loj` (VARCHAR(30)): Número do imóvel.
+  - `complemento_loj` (VARCHAR(100)): Informações complementares.
+  - `bairro_loj` (VARCHAR(100)): Bairro.
+  - `cidade_loj` (VARCHAR(100)): Município da loja.
+  - `estado_loj` (CHAR(2)): Unidade federativa (ex: "SP").
+  - `latitude_loj` (DECIMAL(10,7)): Latitude geográfica da loja.
+  - `longitude_loj` (DECIMAL(10,7)): Longitude geográfica da loja.
 
-#### 2. `Veiculos`
-- **Responsabilidade:** Representa o estoque central de veículos novos e seminovos da rede.
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador único do veículo.
-  - `UnidadeId` (UUID / Guid, FK -> Unidades.Id, NOT NULL): Loja física onde o veículo está localizado (RF20).
-  - `Marca` (VARCHAR(80), NOT NULL): Marca / Fabricante (ex: "Toyota", "Volkswagen").
-  - `Modelo` (VARCHAR(100), NOT NULL): Modelo específico (ex: "Corolla Altis Hybrid").
-  - `AnoFabricacao` (INTEGER, NOT NULL): Ano em que foi produzido.
-  - `AnoModelo` (INTEGER, NOT NULL): Ano modelo do veículo.
-  - `Tipo` (VARCHAR(20), NOT NULL): Tipo do veículo (`Novo` ou `Seminovo`).
-  - `Preco` (NUMERIC(14,2), NOT NULL): Valor comercial anunciado em reais.
-  - `Quilometragem` (INTEGER, NOT NULL): KM rodado (0 para novos).
-  - `Cor` (VARCHAR(50), NOT NULL): Cor externa do veículo.
-  - `Combustivel` (VARCHAR(40), NOT NULL): Flex, Gasolina, Diesel, Elétrico, Híbrido.
-  - `Cambio` (VARCHAR(30), NOT NULL): Manual, Automático, CVT.
-  - `Placa` (VARCHAR(10), NULL, UNIQUE): Placa (obrigatória para seminovos, null para novos sem emplacamento).
-  - `Chassi` (VARCHAR(30), NULL, UNIQUE): Número do chassi para controle de estoque.
-  - `Situacao` (VARCHAR(20), NOT NULL, DEFAULT 'Disponivel'): Situação atual (`Disponivel`, `Reservado`, `Vendido`) (RF04).
-  - `Descricao` (TEXT, NULL): Texto descritivo e opcionais do veículo.
-  - `Ativo` (BOOLEAN, NOT NULL, DEFAULT true): Exibição ativa no catálogo.
-  - `VersaoConcorrencia` (INTEGER, NOT NULL, DEFAULT 1): Controle de concorrência otimista (Optimistic Locking).
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data do cadastro no sistema.
-  - `DataAtualizacao` (TIMESTAMP WITH TIME ZONE, NULL): Data da última alteração de cadastro.
+#### 2. `UsuarioSistema` (Usuários Internos e Autenticação)
+- **Responsabilidade:** Armazena os funcionários da concessionária e seus respectivos perfis administrativos e operacionais (RF24, RN07).
+- **Colunas:**
+  - `id_usu` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador do usuário interno.
+  - `nome_usu` (VARCHAR(300), NOT NULL): Nome do colaborador.
+  - `email_usu` (VARCHAR(300), NOT NULL, UNIQUE): E-mail institucional de acesso.
+  - `senha_usu` (VARCHAR(300), NOT NULL): Hash seguro da senha (BCrypt, nunca armazenado em texto puro).
+  - `perfil_usu` (VARCHAR(100), NOT NULL): Papel/perfil no sistema (`comercial`, `logistica`, `administrador`).
 
-#### 3. `VeiculoImagens`
-- **Responsabilidade:** Armazena as URLs e metadados das fotografias de cada veículo (RF02, RF08).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador da imagem.
-  - `VeiculoId` (UUID / Guid, FK -> Veiculos.Id, NOT NULL, ON DELETE CASCADE): Veículo associado.
-  - `Url` (VARCHAR(500), NOT NULL): Caminho/URL da imagem em storage (S3/CDN/Local).
-  - `OrdemExibicao` (INTEGER, NOT NULL, DEFAULT 0): Ordem visual na galeria do portal.
-  - `Principal` (BOOLEAN, NOT NULL, DEFAULT false): Identifica a foto de capa do card.
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data de upload.
+#### 3. `Cliente`
+- **Responsabilidade:** Centraliza os dados de contato dos clientes que interagem na plataforma (propostas, dúvidas, reservas, agendamentos ou compras).
+- **Colunas:**
+  - `id_cli` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador único do cliente.
+  - `nome_cli` (VARCHAR(300), NOT NULL): Nome completo do cliente.
+  - `email_cli` (VARCHAR(300), NOT NULL): E-mail de contato.
+  - `telefone_cli` (VARCHAR(30), NOT NULL): Telefone / WhatsApp com DDD.
 
-#### 4. `VeiculoHistoricoAlteracoes`
-- **Responsabilidade:** Rastreabilidade e auditoria de modificações realizadas nos veículos (RF02, RN07).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador da entrada de log.
-  - `VeiculoId` (UUID / Guid, FK -> Veiculos.Id, NOT NULL, ON DELETE CASCADE): Veículo modificado.
-  - `UsuarioId` (UUID / Guid, FK -> Usuarios.Id, NOT NULL): Colaborador responsável pela alteração.
-  - `CampoModificado` (VARCHAR(100), NOT NULL): Atributo alterado (ex: "Preco", "Situacao", "Quilometragem").
-  - `ValorAnterior` (TEXT, NULL): Valor antes da modificação.
-  - `ValorNovo` (TEXT, NOT NULL): Novo valor registrado.
-  - `Justificativa` (VARCHAR(255), NULL): Motivo da alteração.
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Timestamp do evento de auditoria.
+#### 4. `FormaPagamento`
+- **Responsabilidade:** Cadastra as formas de pagamento aceitas pela concessionária para aquisição de veículos (RF18).
+- **Colunas:**
+  - `id_fp` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador da forma de pagamento.
+  - `nome_fp` (VARCHAR(100), NOT NULL, UNIQUE): Nome da modalidade (`À Vista`, `Consórcio`, `Financiamento`).
 
-#### 5. `Reservas`
-- **Responsabilidade:** Registro e controle das reservas de veículos solicitadas pelos clientes (RF11, RF26, RN01, RN03).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador da reserva.
-  - `VeiculoId` (UUID / Guid, FK -> Veiculos.Id, NOT NULL): Veículo reservado.
-  - `NomeCliente` (VARCHAR(150), NOT NULL): Nome completo do cliente.
-  - `EmailCliente` (VARCHAR(150), NOT NULL): E-mail do cliente.
-  - `TelefoneCliente` (VARCHAR(20), NOT NULL): Telefone para contato com DDD.
-  - `CpfCliente` (VARCHAR(14), NOT NULL): CPF do solicitante da reserva.
-  - `DataInicio` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data/hora da criação da reserva.
-  - `DataExpiracao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data/hora em que a reserva expira automaticamente se não confirmada/concluída.
-  - `Status` (VARCHAR(20), NOT NULL, DEFAULT 'Pendente'): `Pendente`, `Confirmada`, `Cancelada`, `Expirada`, `Concluida`.
-  - `MotivoCancelamento` (VARCHAR(255), NULL): Justificativa em caso de desistência ou cancelamento.
-  - `Observacoes` (TEXT, NULL): Notas comerciais sobre a reserva.
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data de submissão.
-  - `DataAtualizacao` (TIMESTAMP WITH TIME ZONE, NULL): Data da alteração de status.
+#### 5. `Veiculo` (Estoque Central)
+- **Responsabilidade:** Armazena os dados dos veículos novos e seminovos em estoque e a respectiva loja onde cada veículo físico está localizado (RF01, RF02, RF04, RF20).
+- **Colunas:**
+  - `id_vei` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador do veículo.
+  - `id_loj_fk` (INT, NOT NULL, FK -> `Loja.id_loj`): Loja física onde o veículo está alocado.
+  - `tipo_vei` (VARCHAR(30), NOT NULL): Tipo (`Novo` ou `Seminovo`).
+  - `marca_vei` (VARCHAR(100), NOT NULL): Fabricante / Marca (RF02).
+  - `modelo_vei` (VARCHAR(100), NOT NULL): Modelo do automóvel.
+  - `ano_vei` (INT, NOT NULL): Ano de fabricação / modelo.
+  - `preco_vei` (DECIMAL(12,2), NOT NULL): Preço de venda anunciado.
+  - `quilometragem_vei` (INT, NOT NULL): KM rodado (0 para novos).
+  - `cor_vei` (VARCHAR(50), NOT NULL): Cor externa.
+  - `descricao_vei` (TEXT): Descrição detalhada dos opcionais e acessórios.
+  - `situacao_vei` (VARCHAR(30), NOT NULL, DEFAULT 'Disponivel'): Situação atual: `Disponivel`, `Reservado`, `Vendido` (RF04, RN01, RN02).
 
-#### 6. `Agendamentos`
-- **Responsabilidade:** Controle de visitas presenciais a lojas e test-drives agendados com veículos (RF12, RF13, RF14, RF27, RN02, RN04, RN08).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador do agendamento.
-  - `Tipo` (VARCHAR(20), NOT NULL): `Visita` ou `TestDrive`.
-  - `UnidadeId` (UUID / Guid, FK -> Unidades.Id, NOT NULL): Loja física onde ocorrerá a visita/test-drive.
-  - `VeiculoId` (UUID / Guid, FK -> Veiculos.Id, NULL): Veículo específico (obrigatório se tipo for `TestDrive`, opcional se for apenas visita geral à loja).
-  - `NomeCliente` (VARCHAR(150), NOT NULL): Nome do cliente.
-  - `EmailCliente` (VARCHAR(150), NOT NULL): E-mail para confirmações.
-  - `TelefoneCliente` (VARCHAR(20), NOT NULL): WhatsApp/Telefone.
-  - `CnhCliente` (VARCHAR(20), NULL): Número de CNH (obrigatório para test-drive).
-  - `DataHoraInicio` (TIMESTAMP WITH TIME ZONE, NOT NULL): Horário de início do agendamento.
-  - `DataHoraFim` (TIMESTAMP WITH TIME ZONE, NOT NULL): Horário de término estimado (ex: 45 minutos após o início).
-  - `Status` (VARCHAR(20), NOT NULL, DEFAULT 'Solicitado'): `Solicitado`, `Confirmado`, `Realizado`, `Cancelado`.
-  - `Observacoes` (TEXT, NULL): Solicitações especiais do cliente ou orientações da loja.
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data da solicitação.
+#### 6. `FotoVeiculo`
+- **Responsabilidade:** Guarda a galeria de fotografias vinculadas a cada veículo (RF02, RF08).
+- **Colunas:**
+  - `id_fot` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador da foto.
+  - `id_vei_fk` (INT, NOT NULL, FK -> `Veiculo.id_vei` ON DELETE CASCADE): Veículo associado.
+  - `url_fot` (VARCHAR(500), NOT NULL): URL ou caminho da foto.
 
-#### 7. `PropostasComerciais` (Leads de Negociação e Aquisição)
-- **Responsabilidade:** Registro de propostas comerciais e intenção de início de compra de veículos (RF10, RF16, RN06).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador da proposta.
-  - `VeiculoId` (UUID / Guid, FK -> Veiculos.Id, NOT NULL): Veículo de interesse.
-  - `UnidadeId` (UUID / Guid, FK -> Unidades.Id, NOT NULL): Unidade onde o cliente prefere atendimento.
-  - `NomeCliente` (VARCHAR(150), NOT NULL): Nome do proponente.
-  - `EmailCliente` (VARCHAR(150), NOT NULL): E-mail.
-  - `TelefoneCliente` (VARCHAR(20), NOT NULL): Telefone de contato.
-  - `CpfCliente` (VARCHAR(14), NULL): CPF do interessado.
-  - `FormaPagamentoInteresse` (VARCHAR(30), NOT NULL): `AVista`, `Consorcio`, `Financiamento` (RF18).
-  - `PossuiVeiculoNaTroca` (BOOLEAN, NOT NULL, DEFAULT false): Indica se cliente planeja dar usado na troca.
-  - `DescricaoVeiculoTroca` (VARCHAR(255), NULL): Dados do veículo de entrada (marca, modelo, ano).
-  - `ValorEntrada` (NUMERIC(14,2), NULL): Valor inicial que o cliente pretende dar de entrada.
-  - `Status` (VARCHAR(25), NOT NULL, DEFAULT 'Recebida'): `Recebida`, `EmAtendimento`, `Concluida`, `Descartada`.
-  - `VendedorResponsavelId` (UUID / Guid, FK -> Usuarios.Id, NULL): Colaborador comercial que assumiu a tratativa.
-  - `NotasAtendimento` (TEXT, NULL): Histórico das conversas comerciais.
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Timestamp de envio.
+#### 7. `AlteracaoVeiculo` (Histórico e Auditoria)
+- **Responsabilidade:** Registra alterações e modificações realizadas em um veículo (RF02, RN07).
+- **Colunas:**
+  - `id_alt` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador do registro de alteração.
+  - `id_vei_fk` (INT, NOT NULL, FK -> `Veiculo.id_vei` ON DELETE CASCADE): Veículo alterado.
+  - `descricao_alt` (TEXT, NOT NULL): Descrição do que foi modificado no veículo.
 
-#### 8. `Contatos` (Fale Conosco e Dúvidas de Veículos)
-- **Responsabilidade:** Registro de solicitações de informações gerais e mensagens direcionadas a vendedores (RF09, RF17, RF25).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador do contato.
-  - `VeiculoId` (UUID / Guid, FK -> Veiculos.Id, NULL): Veículo de referência (se houver).
-  - `UnidadeId` (UUID / Guid, FK -> Unidades.Id, NULL): Loja mais próxima informada pelo cliente.
-  - `Nome` (VARCHAR(150), NOT NULL): Nome do interessado.
-  - `Email` (VARCHAR(150), NOT NULL): E-mail para resposta.
-  - `Telefone` (VARCHAR(20), NOT NULL): Telefone/WhatsApp.
-  - `Assunto` (VARCHAR(150), NOT NULL): Título ou tipo de dúvida.
-  - `Mensagem` (TEXT, NOT NULL): Mensagem redigida pelo cliente.
-  - `Respondido` (BOOLEAN, NOT NULL, DEFAULT false): Indicador de atendimento concluído.
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data do recebimento.
+#### 8. `Contato` (Atendimento e Solicitação Comercial)
+- **Responsabilidade:** Registra pedidos de informação, solicitações de propostas comerciais, início de compra e encaminhamentos a vendedores (RF09, RF10, RF16, RF17, RF25).
+- **Colunas:**
+  - `id_con` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador do contato.
+  - `id_cli_fk` (INT, FK -> `Cliente.id_cli`): Cliente solicitante.
+  - `id_vei_fk` (INT, FK -> `Veiculo.id_vei`): Veículo de interesse (se aplicável).
+  - `id_loj_fk` (INT, FK -> `Loja.id_loj`): Loja de preferência do cliente.
+  - `id_usu_fk` (INT, FK -> `UsuarioSistema.id_usu`): Vendedor responsável pelo atendimento.
+  - `tipo_con` (VARCHAR(100), NOT NULL): Tipo do contato (`Informacao`, `Proposta`, `InicioCompra`, `ContatoVendedor`).
+  - `mensagem_con` (TEXT, NOT NULL): Conteúdo da mensagem ou dados da proposta.
+  - `data_con` (DATETIME / TIMESTAMPTZ, NOT NULL): Data e hora do registro.
 
-#### 9. `Pecas` e `PecasCategorias`
-- **Responsabilidade:** Catálogo e controle de disponibilidade das peças e acessórios automotivos (RF21, RF22, RF23, RF29).
-- **Propriedades `PecasCategorias`:**
-  - `Id` (UUID / Guid, PK): Identificador da categoria.
-  - `Nome` (VARCHAR(100), NOT NULL, UNIQUE): Ex: "Motor", "Freios", "Suspensão", "Acessórios", "Pneus".
-  - `Descricao` (VARCHAR(255), NULL): Descrição da categoria.
-- **Propriedades `Pecas`:**
-  - `Id` (UUID / Guid, PK): Identificador da peça.
-  - `CategoriaId` (UUID / Guid, FK -> PecasCategorias.Id, NOT NULL): Categoria da peça.
-  - `CodigoReferencia` (VARCHAR(50), NOT NULL, UNIQUE): Código OEM/Fabricante da peça.
-  - `Nome` (VARCHAR(150), NOT NULL): Nome da peça.
-  - `Fabricante` (VARCHAR(100), NOT NULL): Fabricante da peça (ex: Bosch, Mahle, Cofap).
-  - `ModelosCompativeis` (TEXT, NOT NULL): Lista/descrição de modelos de carros compatíveis.
-  - `Preco` (NUMERIC(14,2), NOT NULL): Preço unitário da peça.
-  - `QuantidadeEstoque` (INTEGER, NOT NULL, DEFAULT 0): Saldo atual no estoque da rede.
-  - `Disponivel` (BOOLEAN, NOT NULL, DEFAULT true): Flag de disponibilidade para consulta (RF23).
-  - `TotalSaidas` (INTEGER, NOT NULL, DEFAULT 0): Contador acumulado de saídas/vendas para alimentar o indicador gerencial de peças com maior saída (RF29).
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data de cadastro.
+#### 9. `Reserva`
+- **Responsabilidade:** Registra a solicitação e o controle de reservas de veículos (RF11, RF15, RF26, RN01, RN03).
+- **Colunas:**
+  - `id_res` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador da reserva.
+  - `id_cli_fk` (INT, NOT NULL, FK -> `Cliente.id_cli`): Cliente que solicitou a reserva.
+  - `id_vei_fk` (INT, NOT NULL, FK -> `Veiculo.id_vei`): Veículo reservado.
+  - `data_solicitacao_res` (DATETIME / TIMESTAMPTZ, NOT NULL): Data/hora da reserva.
+  - `situacao_res` (VARCHAR(100), NOT NULL, DEFAULT 'Pendente'): Situação da reserva (`Pendente`, `Confirmada`, `Cancelada`, `Expirada`, `Concluida`).
 
-#### 10. `Vendas`
-- **Responsabilidade:** Registro do fechamento de vendas de veículos para histórico e métricas gerenciais (RF28, RF29).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador da venda.
-  - `VeiculoId` (UUID / Guid, FK -> Veiculos.Id, NOT NULL, UNIQUE): Veículo comercializado.
-  - `UnidadeId` (UUID / Guid, FK -> Unidades.Id, NOT NULL): Loja onde a venda foi finalizada.
-  - `VendedorId` (UUID / Guid, FK -> Usuarios.Id, NOT NULL): Vendedor responsável pelo fechamento.
-  - `PropostaId` (UUID / Guid, FK -> PropostasComerciais.Id, NULL): Proposta de origem gerada no site.
-  - `NomeComprador` (VARCHAR(150), NOT NULL): Nome do cliente comprador.
-  - `CpfComprador` (VARCHAR(14), NOT NULL): CPF do comprador.
-  - `ValorVenda` (NUMERIC(14,2), NOT NULL): Valor final negociado.
-  - `FormaPagamentoUtilizada` (VARCHAR(40), NOT NULL): Forma de pagamento contratada.
-  - `DataVenda` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data da assinatura do contrato/entrega.
+#### 10. `Agendamento`
+- **Responsabilidade:** Registra visitas presenciais a lojas e test-drives agendados pelos clientes (RF12, RF13, RF14, RF15, RF27, RN02, RN04, RN08).
+- **Colunas:**
+  - `id_age` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador do agendamento.
+  - `id_cli_fk` (INT, NOT NULL, FK -> `Cliente.id_cli`): Cliente solicitante.
+  - `id_loj_fk` (INT, NOT NULL, FK -> `Loja.id_loj`): Loja física onde ocorrerá a visita/test-drive.
+  - `id_vei_fk` (INT, FK -> `Veiculo.id_vei`): Veículo associado (obrigatório para test-drive, opcional para visita geral).
+  - `tipo_age` (VARCHAR(100), NOT NULL): Tipo (`Visita`, `TestDrive`).
+  - `data_hora_inicio_age` (DATETIME / TIMESTAMPTZ, NOT NULL): Horário inicial do agendamento.
+  - `data_hora_fim_age` (DATETIME / TIMESTAMPTZ, NOT NULL): Horário de término do agendamento.
+  - `situacao_age` (VARCHAR(100), NOT NULL, DEFAULT 'Solicitado'): Situação (`Solicitado`, `Confirmado`, `Realizado`, `Cancelado`).
 
-#### 11. `Usuarios` (Controle de Acesso e Permissões Administrativas)
-- **Responsabilidade:** Armazena os colaboradores administrativos, comerciais e de logística (RF24, RN07).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador do usuário.
-  - `UnidadeId` (UUID / Guid, FK -> Unidades.Id, NULL): Unidade física de lotação do funcionário (null para Administradores globais).
-  - `Nome` (VARCHAR(150), NOT NULL): Nome completo do colaborador.
-  - `Email` (VARCHAR(150), NOT NULL, UNIQUE): E-mail corporativo utilizado para login.
-  - `SenhaHash` (VARCHAR(255), NOT NULL): Hash seguro gerado com BCrypt.
-  - `Perfil` (VARCHAR(30), NOT NULL): `Administrador`, `Comercial`, `Logistica`.
-  - `Ativo` (BOOLEAN, NOT NULL, DEFAULT true): Situação do usuário no sistema.
-  - `DataCriacao` (TIMESTAMP WITH TIME ZONE, NOT NULL): Data do cadastro.
+#### 11. `Peca` (Catálogo e Estoque de Peças)
+- **Responsabilidade:** Guarda o catálogo de peças automotivas e a quantidade em estoque atual (RF21, RF22, RF23).
+- **Colunas:**
+  - `id_pec` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador da peça.
+  - `nome_pec` (VARCHAR(300), NOT NULL): Nome comercial da peça.
+  - `descricao_pec` (TEXT): Descrição técnica e compatibilidade veicular.
+  - `preco_pec` (DECIMAL(10,2), NOT NULL): Preço unitário da peça.
+  - `quantidade_estoque_pec` (INT, NOT NULL, DEFAULT 0): Saldo de estoque físico da rede.
 
-#### 12. `Faqs` (Dúvidas Frequentes)
-- **Responsabilidade:** Armazena as perguntas e respostas institucionais para o portal público (RF30).
-- **Propriedades:**
-  - `Id` (UUID / Guid, PK): Identificador da dúvida.
-  - `Pergunta` (VARCHAR(255), NOT NULL): Pergunta frequente.
-  - `Resposta` (TEXT, NOT NULL): Resposta detalhada.
-  - `Categoria` (VARCHAR(80), NOT NULL): Ex: "Financiamento", "Reservas", "Test-Drive", "Documentação".
-  - `Ordem` (INTEGER, NOT NULL, DEFAULT 0): Ordem visual de exibição.
-  - `Ativo` (BOOLEAN, NOT NULL, DEFAULT true): Flag de exibição.
+#### 12. `VendaVeiculo` (Registro de Vendas de Veículos)
+- **Responsabilidade:** Registra uma venda concluída e relaciona veículo, cliente, vendedor, loja e forma de pagamento utilizada (RF28, RF29).
+- **Colunas:**
+  - `id_vv` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador da venda de veículo.
+  - `id_vei_fk` (INT, NOT NULL, UNIQUE, FK -> `Veiculo.id_vei`): Veículo comercializado.
+  - `id_cli_fk` (INT, NOT NULL, FK -> `Cliente.id_cli`): Cliente comprador.
+  - `id_vendedor_fk` (INT, NOT NULL, FK -> `UsuarioSistema.id_usu`): Vendedor responsável pelo fechamento.
+  - `id_loj_fk` (INT, NOT NULL, FK -> `Loja.id_loj`): Loja física onde a venda foi finalizada.
+  - `id_fp_fk` (INT, NOT NULL, FK -> `FormaPagamento.id_fp`): Forma de pagamento contratada.
+  - `data_venda_vv` (DATETIME / TIMESTAMPTZ, NOT NULL): Data e hora da assinatura/conclusão da venda.
+  - `valor_final_vv` (DECIMAL(12,2), NOT NULL): Valor final negociado.
+
+#### 13. `VendaPeca` (Registro de Saída e Venda de Peças)
+- **Responsabilidade:** Registra as peças vendidas, quantidade, valor unitário, data da venda e cliente (RF28, RF29 - Peças com maior saída).
+- **Colunas:**
+  - `id_vp` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador da venda de peça.
+  - `id_pec_fk` (INT, NOT NULL, FK -> `Peca.id_pec`): Peça comercializada.
+  - `id_cli_fk` (INT, FK -> `Cliente.id_cli`): Cliente comprador (se identificado).
+  - `quantidade_vp` (INT, NOT NULL): Quantidade vendida.
+  - `valor_unitario_vp` (DECIMAL(10,2), NOT NULL): Preço unitário praticado na venda.
+  - `data_venda_vp` (DATETIME / TIMESTAMPTZ, NOT NULL): Data e hora da transação.
+
+#### 14. `DuvidaFrequente` (FAQ Institucional)
+- **Responsabilidade:** Guarda perguntas e respostas frequentes exibidas aos clientes no portal web (RF30). Não requer relacionamento com as demais tabelas.
+- **Colunas:**
+  - `id_df` (INT, PK, AUTO_INCREMENT / SERIAL): Identificador da dúvida frequente.
+  - `pergunta_df` (TEXT, NOT NULL): Pergunta frequente.
+  - `resposta_df` (TEXT, NOT NULL): Resposta oficial da concessionária.
 
 ---
 
-## 6. DIAGRAMA ER (ENTITY RELATIONSHIP)
+## 6. DIAGRAMA ER (ENTITY RELATIONSHIP) — SCHEMA OFICIAL
 
-O diagrama a seguir sintetiza os relacionamentos estruturais do banco de dados relacional PostgreSQL:
+O diagrama a seguir reflete fielmente as 14 tabelas oficiais da Star Concessionária e seus relacionamentos:
 
 ```mermaid
 erDiagram
-    UNIDADES ||--o{ VEICULOS : "possui em estoque"
-    UNIDADES ||--o{ AGENDAMENTOS : "recebe"
-    UNIDADES ||--o{ PROPOSTAS_COMERCIAIS : "atende"
-    UNIDADES ||--o{ CONTATOS : "direcionado para"
-    UNIDADES ||--o{ USUARIOS : "aloca funcionarios"
-    UNIDADES ||--o{ VENDAS : "realiza"
+    Loja ||--o{ Veiculo : "possui no estoque (id_loj_fk)"
+    Loja ||--o{ Agendamento : "sedia (id_loj_fk)"
+    Loja ||--o{ Contato : "direcionado a (id_loj_fk)"
+    Loja ||--o{ VendaVeiculo : "efetua (id_loj_fk)"
 
-    VEICULOS ||--o{ VEICULO_IMAGENS : "possui fotos"
-    VEICULOS ||--o{ VEICULO_HISTORICO : "registra alteracoes"
-    VEICULOS ||--o{ RESERVAS : "recebe reservas"
-    VEICULOS ||--o{ AGENDAMENTOS : "utilizado em test-drive"
-    VEICULOS ||--o{ PROPOSTAS_COMERCIAIS : "origina propostas"
-    VEICULOS ||--o{ CONTATOS : "tem duvidas sobre"
-    VEICULOS ||--o| VENDAS : "comercializado em"
+    Veiculo ||--o{ FotoVeiculo : "possui (id_vei_fk)"
+    Veiculo ||--o{ AlteracaoVeiculo : "possui historico (id_vei_fk)"
+    Veiculo ||--o{ Contato : "referencia (id_vei_fk)"
+    Veiculo ||--o{ Reserva : "recebe (id_vei_fk)"
+    Veiculo ||--o{ Agendamento : "usado em test-drive (id_vei_fk)"
+    Veiculo ||--o| VendaVeiculo : "comercializado em (id_vei_fk)"
 
-    PECAS_CATEGORIAS ||--o{ PECAS : "agrupa"
+    Cliente ||--o{ Contato : "envia (id_cli_fk)"
+    Cliente ||--o{ Reserva : "solicita (id_cli_fk)"
+    Cliente ||--o{ Agendamento : "agenda (id_cli_fk)"
+    Cliente ||--o{ VendaVeiculo : "compra (id_cli_fk)"
+    Cliente ||--o{ VendaPeca : "adquire (id_cli_fk)"
 
-    USUARIOS ||--o{ VEICULO_HISTORICO : "executa alteracao"
-    USUARIOS ||--o{ PROPOSTAS_COMERCIAIS : "gerencia lead"
-    USUARIOS ||--o{ VENDAS : "efetua venda"
+    UsuarioSistema ||--o{ Contato : "atende (id_usu_fk)"
+    UsuarioSistema ||--o{ VendaVeiculo : "vende (id_vendedor_fk)"
 
-    UNIDADES {
-        uuid id PK
-        string nome
-        string cnpj UK
-        string telefone
-        string email
-        string cidade
-        string estado
-        string horario_funcionamento
-        boolean ativo
+    FormaPagamento ||--o{ VendaVeiculo : "utilizada em (id_fp_fk)"
+
+    Peca ||--o{ VendaPeca : "item vendido (id_pec_fk)"
+
+    Loja {
+        int id_loj PK
+        string nome_loj
+        string telefone_loj
+        string cep_loj
+        string endereco_loj
+        string numero_loj
+        string complemento_loj
+        string bairro_loj
+        string cidade_loj
+        string estado_loj
+        decimal latitude_loj
+        decimal longitude_loj
     }
 
-    VEICULOS {
-        uuid id PK
-        uuid unidade_id FK
-        string marca
-        string modelo
-        int ano_fabricacao
-        int ano_modelo
-        string tipo
-        decimal preco
-        int quilometragem
-        string cor
-        string combustivel
-        string cambio
-        string placa UK
-        string situacao "Disponivel | Reservado | Vendido"
-        boolean ativo
-        int versao_concorrencia
+    UsuarioSistema {
+        int id_usu PK
+        string nome_usu
+        string email_usu UK
+        string senha_usu
+        string perfil_usu "comercial | logistica | administrador"
     }
 
-    VEICULO_IMAGENS {
-        uuid id PK
-        uuid veiculo_id FK
-        string url
-        int ordem_exibicao
-        boolean principal
+    Cliente {
+        int id_cli PK
+        string nome_cli
+        string email_cli
+        string telefone_cli
     }
 
-    VEICULO_HISTORICO {
-        uuid id PK
-        uuid veiculo_id FK
-        uuid usuario_id FK
-        string campo_modificado
-        text valor_anterior
-        text valor_novo
-        timestamp data_criacao
+    FormaPagamento {
+        int id_fp PK
+        string nome_fp UK
     }
 
-    RESERVAS {
-        uuid id PK
-        uuid veiculo_id FK
-        string nome_cliente
-        string email_cliente
-        string telefone_cliente
-        string cpf_cliente
-        timestamp data_inicio
-        timestamp data_expiracao
-        string status "Pendente | Confirmada | Cancelada | Expirada | Concluida"
+    Veiculo {
+        int id_vei PK
+        int id_loj_fk FK
+        string tipo_vei "Novo | Seminovo"
+        string marca_vei
+        string modelo_vei
+        int ano_vei
+        decimal preco_vei
+        int quilometragem_vei
+        string cor_vei
+        text descricao_vei
+        string situacao_vei "Disponivel | Reservado | Vendido"
     }
 
-    AGENDAMENTOS {
-        uuid id PK
-        string tipo "Visita | TestDrive"
-        uuid unidade_id FK
-        uuid veiculo_id FK "nullable para visita"
-        string nome_cliente
-        string email_cliente
-        string telefone_cliente
-        string cnh_cliente
-        timestamp data_hora_inicio
-        timestamp data_hora_fim
-        string status "Solicitado | Confirmado | Realizado | Cancelado"
+    FotoVeiculo {
+        int id_fot PK
+        int id_vei_fk FK
+        string url_fot
     }
 
-    PROPOSTAS_COMERCIAIS {
-        uuid id PK
-        uuid veiculo_id FK
-        uuid unidade_id FK
-        string nome_cliente
-        string email_cliente
-        string telefone_cliente
-        string forma_pagamento "AVista | Consorcio | Financiamento"
-        boolean possui_veiculo_troca
-        decimal valor_entrada
-        string status "Recebida | EmAtendimento | Concluida | Descartada"
-        uuid vendedor_responsavel_id FK
+    AlteracaoVeiculo {
+        int id_alt PK
+        int id_vei_fk FK
+        text descricao_alt
     }
 
-    CONTATOS {
-        uuid id PK
-        uuid veiculo_id FK "nullable"
-        uuid unidade_id FK "nullable"
-        string nome
-        string email
-        string telefone
-        string assunto
-        text mensagem
-        boolean respondido
+    Contato {
+        int id_con PK
+        int id_cli_fk FK
+        int id_vei_fk FK
+        int id_loj_fk FK
+        int id_usu_fk FK
+        string tipo_con
+        text mensagem_con
+        datetime data_con
     }
 
-    PECAS_CATEGORIAS {
-        uuid id PK
-        string nome UK
-        string descricao
+    Reserva {
+        int id_res PK
+        int id_cli_fk FK
+        int id_vei_fk FK
+        datetime data_solicitacao_res
+        string situacao_res "Pendente | Confirmada | Cancelada | Expirada | Concluida"
     }
 
-    PECAS {
-        uuid id PK
-        uuid categoria_id FK
-        string codigo_referencia UK
-        string nome
-        string fabricante
-        text modelos_compativeis
-        decimal preco
-        int quantidade_estoque
-        boolean disponivel
-        int total_saidas
+    Agendamento {
+        int id_age PK
+        int id_cli_fk FK
+        int id_loj_fk FK
+        int id_vei_fk FK
+        string tipo_age "Visita | TestDrive"
+        datetime data_hora_inicio_age
+        datetime data_hora_fim_age
+        string situacao_age "Solicitado | Confirmado | Realizado | Cancelado"
     }
 
-    VENDAS {
-        uuid id PK
-        uuid veiculo_id FK UK
-        uuid unidade_id FK
-        uuid vendedor_id FK
-        uuid proposta_id FK "nullable"
-        string nome_comprador
-        string cpf_comprador
-        decimal valor_venda
-        string forma_pagamento_utilizada
-        timestamp data_venda
+    Peca {
+        int id_pec PK
+        string nome_pec
+        text descricao_pec
+        decimal preco_pec
+        int quantidade_estoque_pec
     }
 
-    USUARIOS {
-        uuid id PK
-        uuid unidade_id FK "nullable"
-        string nome
-        string email UK
-        string senha_hash
-        string perfil "Administrador | Comercial | Logistica"
-        boolean ativo
+    VendaVeiculo {
+        int id_vv PK
+        int id_vei_fk FK UK
+        int id_cli_fk FK
+        int id_vendedor_fk FK
+        int id_loj_fk FK
+        int id_fp_fk FK
+        datetime data_venda_vv
+        decimal valor_final_vv
     }
 
-    FAQS {
-        uuid id PK
-        string pergunta
-        text resposta
-        string categoria
-        int ordem
-        boolean ativo
+    VendaPeca {
+        int id_vp PK
+        int id_pec_fk FK
+        int id_cli_fk FK
+        int quantidade_vp
+        decimal valor_unitario_vp
+        datetime data_venda_vp
+    }
+
+    DuvidaFrequente {
+        int id_df PK
+        text pergunta_df
+        text resposta_df
     }
 ```
-
-### 5.2 Regras de Integridade, Índices e Concorrência
-
-1. **Índices de Alta Performance (RNF03):**
-   - `IX_Veiculos_Filtros`: Índice composto em `(Situacao, Ativo, Marca, Modelo, Preco, AnoFabricacao)` para garantir respostas sub-milissegundo no catálogo público.
-   - `IX_Veiculos_UnidadeId`: Para consultas de veículos por loja física.
-   - `IX_Reservas_Veiculo_Status`: Índice em `(VeiculoId, Status)` para validação instantânea de reservas ativas.
-   - `IX_Agendamentos_Veiculo_Periodo`: Índice em `(VeiculoId, DataHoraInicio, DataHoraFim, Status)` para checagem imediata de sobreposição de test-drives.
-2. **Concorrência Otimista e Pessimista:**
-   - **Reservas e Test-Drives Simultâneos (RN01, RN03, RN08):** Durante a criação de uma reserva ou agendamento de test-drive, utiliza-se uma transação com nível de isolamento `Read Committed` combinada com `VersaoConcorrencia` no veículo ou comando com bloqueio pessimista `SELECT ... FOR UPDATE` via EF Core (`FromSqlRaw` ou extensão Npgsql), garantindo que duas requisições concorrentes não possam reservar o mesmo veículo simultaneamente.
-3. **Restrições de Negócio no Banco (Check Constraints):**
-   - Preço de veículo e peça deve ser sempre `> 0`.
-   - Quilometragem deve ser `>= 0`.
-   - `DataHoraFim` do agendamento deve ser estritamente maior que `DataHoraInicio`.
-   - Um veículo só pode possuir **uma única** foto marcada como `Principal = true` por vez.
 
 ---
 
